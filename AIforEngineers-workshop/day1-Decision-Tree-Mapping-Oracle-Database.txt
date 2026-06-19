@@ -1,0 +1,50 @@
+escalation decision tree – Oracle database example
+START: AI produces an Oracle SQL / PL-SQL output
+│
+├─ Is this READ-ONLY? (SELECT, EXPLAIN PLAN, describe, document, analyse)
+│ YES → Use directly. Log: what was asked, what AI returned.
+│ NO ↓
+│
+├─ Does it affect a PRODUCTION database? (vs dev / test / sandbox)
+│ NO → Log as advisory. Run in a lower environment first. No prod action.
+│ YES ↓
+│
+├─ Is it DDL, a GRANT, or destructive DML?
+│ (DROP, TRUNCATE, ALTER, CREATE/REPLACE, GRANT/REVOKE, mass DELETE/UPDATE)
+│ YES ↓ [Highest risk category]
+│ │
+│ ├─ Does it touch SYS/SYSTEM, the data dictionary, or DROP a table/tablespace?
+│ │ YES → STOP. Escalate to DBA / database architect.
+│ │ Do not apply — object loss or dictionary corruption is unrecoverable.
+│ │ NO ↓
+│ │
+│ ├─ Is the change reversible? (RMAN backup, Flashback, or rollback ready)
+│ │ NO → Cannot proceed. Secure a recovery point first
+│ │ (backup, guaranteed restore point, or flashback enabled).
+│ │ YES ↓
+│ │
+│ ├─ Mandatory peer review required.
+│ │ Has a second DBA reviewed the exact statement?
+│ │ NO → Cannot proceed. Get reviewer.
+│ │ YES ↓
+│ │
+│ └─ Raise change record. Get approval. Apply in maintenance window.
+│srav
+│ NO [Non-DDL changes] ↓
+│
+├─ Does AI output include SPECIFIC syntax?
+│ (exact schema.table, column names, bind values, qualified WHERE clause)
+│ NO → AI output is vague. Escalate to senior DBA for clarification.
+│ YES ↓
+│
+├─ Is an active batch, backup, ETL, or stats-gathering job running?
+│ YES → Wait or schedule after the job. Risk of locks / contention.
+│        Document the reason for delay.
+│ NO ↓
+│
+├─ Blast radius estimate: how many rows / objects does this change affect?
+│ >10,000 rows, or any shared / reference / partitioned table
+│        → Treat as DDL (peer review required).
+│ ≤10,000 rows and a single non-shared object ↓
+│
+└─ Raise change record. Apply. Document the AI output used.
