@@ -1,0 +1,4 @@
+.terraform/
+.terraform.tfstate.lock.info
+AI4Infra-Engineer/
+batch2/
